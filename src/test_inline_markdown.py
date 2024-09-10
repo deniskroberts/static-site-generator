@@ -116,45 +116,67 @@ class TestInlineMarkdown(unittest.TestCase):
         ]
         self.assertListEqual(expected, links)
 
-    def test_split_nodes_image(self):
-        node = TextNode("This is text with a ![rick roll](https://i.imgur.com/aKaOqIh.gif) and ![obi wan](https://i.imgur.com/fJRm4Vk.jpeg)", text_type_text)
+    def test_split_image(self):
+        node = TextNode(
+            "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)",
+            text_type_text,
+        )
         new_nodes = split_nodes_image([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with an ", text_type_text),
+                TextNode("image", text_type_image, "https://i.imgur.com/zjjcJKZ.png"),
+            ],
+            new_nodes,
+        )
 
-        self.assertEqual(len(new_nodes), 4)
+    def test_split_image_single(self):
+        node = TextNode(
+            "![image](https://www.example.com/image.png)",
+            text_type_text,
+        )
+        new_nodes = split_nodes_image([node])
+        self.assertListEqual(
+            [
+                TextNode("image", text_type_image, "https://www.example.com/image.png"),
+            ],
+            new_nodes,
+        )
 
-        self.assertEqual(new_nodes[0].text, "This is text with a ")
-        self.assertEqual(new_nodes[0].text_type, text_type_text)
+    def test_split_images(self):
+        node = TextNode(
+            "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and another ![second image](https://i.imgur.com/3elNhQu.png)",
+            text_type_text,
+        )
+        new_nodes = split_nodes_image([node])
+        self.assertListEqual(
+            [
+                TextNode("This is text with an ", text_type_text),
+                TextNode("image", text_type_image, "https://i.imgur.com/zjjcJKZ.png"),
+                TextNode(" and another ", text_type_text),
+                TextNode(
+                    "second image", text_type_image, "https://i.imgur.com/3elNhQu.png"
+                ),
+            ],
+            new_nodes,
+        )
 
-        self.assertEqual(new_nodes[1].text, "rick roll")
-        self.assertEqual(new_nodes[1].text_type, text_type_image)
-        self.assertEqual(new_nodes[1].url, "https://i.imgur.com/aKaOqIh.gif")
-
-        self.assertEqual(new_nodes[2].text, " and ")
-        self.assertEqual(new_nodes[2].text_type, text_type_text)
-
-        self.assertEqual(new_nodes[3].text, "obi wan")
-        self.assertEqual(new_nodes[3].text_type, text_type_image)
-        self.assertEqual(new_nodes[3].url, "https://i.imgur.com/fJRm4Vk.jpeg")
-
-    def test_split_nodes_link(self):
-        node = TextNode("This is text with a [link to Google](https://www.google.com) and [another link](https://www.example.com)", text_type_text)
+    def test_split_links(self):
+        node = TextNode(
+            "This is text with a [link](https://boot.dev) and [another link](https://blog.boot.dev) with text that follows",
+            text_type_text,
+        )
         new_nodes = split_nodes_link([node])
-
-        self.assertEqual(len(new_nodes), 4)
-
-        self.assertEqual(new_nodes[0].text, "This is text with a ")
-        self.assertEqual(new_nodes[0].text_type, text_type_text)
-
-        self.assertEqual(new_nodes[1].text, "link to Google")
-        self.assertEqual(new_nodes[1].text_type, text_type_link)
-        self.assertEqual(new_nodes[1].url, "https://www.google.com")
-
-        self.assertEqual(new_nodes[2].text, " and ")
-        self.assertEqual(new_nodes[2].text_type, text_type_text)
-
-        self.assertEqual(new_nodes[3].text, "another link")
-        self.assertEqual(new_nodes[3].text_type, text_type_link)
-        self.assertEqual(new_nodes[3].url, "https://www.example.com")
+        self.assertListEqual(
+            [
+                TextNode("This is text with a ", text_type_text),
+                TextNode("link", text_type_link, "https://boot.dev"),
+                TextNode(" and ", text_type_text),
+                TextNode("another link", text_type_link, "https://blog.boot.dev"),
+                TextNode(" with text that follows", text_type_text),
+            ],
+            new_nodes,
+        )
 
 if __name__ == "__main__":
     unittest.main()
